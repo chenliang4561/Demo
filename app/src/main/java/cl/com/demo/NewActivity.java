@@ -15,5 +15,6 @@ public class NewActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i("TAG","修改");
+        Log.d("NewActivity","Add a code");
     }
 }
