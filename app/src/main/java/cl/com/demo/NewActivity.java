@@ -17,4 +17,9 @@ public class NewActivity extends Activity {
         Log.i("TAG","修改");
         setContentView(R.layout.activity_main);
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
 }
