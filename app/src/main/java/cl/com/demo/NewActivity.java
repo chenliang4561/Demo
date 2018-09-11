@@ -22,4 +22,9 @@ public class NewActivity extends Activity {
     protected void onDestroy() {
         super.onDestroy();
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
 }
