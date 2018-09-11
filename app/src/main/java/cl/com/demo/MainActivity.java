@@ -1,5 +1,6 @@
 package cl.com.demo;
 
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 
@@ -9,6 +10,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        StatusBarUtil.setRootViewFitsSystemWindows(this, true);
+        StatusBarUtil.setTranslucentStatus(this);
+        StatusBarUtil.setStatusBarColor(this, R.color.colorPrimary);
     }
 
     @Override
@@ -20,4 +24,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
     }
+
+
 }
