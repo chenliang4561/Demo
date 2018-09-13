@@ -1,6 +1,9 @@
 package cl.com.demo;
 
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Build;
 import android.support.annotation.IntDef;
@@ -11,6 +14,8 @@ import android.view.WindowManager;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * 沉浸式状态栏
@@ -53,6 +58,7 @@ public class StatusBarUtil {
     /**
      * 设置状态栏透明
      */
+    @TargetApi(19)
     public static void setTranslucentStatus(Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             //5.x开始需要把颜色设置成透明，否则导航栏会呈现系统默认的浅灰色
@@ -64,7 +70,7 @@ public class StatusBarUtil {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
             window.setStatusBarColor(Color.TRANSPARENT);
             //导航栏颜色也可以正常设置
-            window.setNavigationBarColor(Color.TRANSPARENT);
+//            window.setNavigationBarColor(Color.TRANSPARENT);
 
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             Window window = activity.getWindow();
@@ -92,4 +98,125 @@ public class StatusBarUtil {
         }
     }
 
+    /**
+     * 设置状态栏深色浅色切换
+     */
+    public static boolean setStatusBarDarkTheme(Activity activity, boolean drak) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                setStatusBarFontIconDark(activity, TYPE_M, drak);
+            } else {
+                return false;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 设置状态栏颜色深浅切换
+     */
+    public static boolean setStatusBarFontIconDark(Activity activity, @ViewType int type, boolean dark) {
+        switch (type) {
+            case TYPE_MIUI:
+                setMIUI(activity, dark);
+
+            case TYPE_FLYME:
+                setFlymeUI(activity, dark);
+
+            case TYPE_M:
+
+            default:
+                return setCommonUI(activity, dark);
+        }
+    }
+
+    /**
+     * 设置6.0状态栏颜色深浅切换
+     */
+    public static boolean setCommonUI(Activity activity, boolean drak) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            View decorView = activity.getWindow().getDecorView();
+            if (decorView != null) {
+                int vis = decorView.getSystemUiVisibility();
+                if (drak) {
+                    vis |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                } else {
+                    vis |= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                }
+
+                if (decorView.getSystemUiVisibility() != vis) {
+                    decorView.setSystemUiVisibility(vis);
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 设置Flyme，状态栏颜色深浅切换
+     */
+    public static boolean setFlymeUI(Activity activity, boolean dark) {
+
+        try {
+            Window window = activity.getWindow();
+            WindowManager.LayoutParams layoutParams = window.getAttributes();
+            Field darkFlag = WindowManager.LayoutParams.class.getDeclaredField("MEIZU_FLAG_DARK_STATUS_BAR_ICON");
+            Field meizuFlag = WindowManager.LayoutParams.class.getDeclaredField("meizuFlags");
+            darkFlag.setAccessible(true);
+            meizuFlag.setAccessible(true);
+            int bit = darkFlag.getInt(null);
+            int value = meizuFlag.getInt(layoutParams);
+            if (dark) {
+                value |= bit;
+            } else {
+                value |= ~bit;
+            }
+            meizuFlag.setInt(layoutParams, value);
+            window.setAttributes(layoutParams);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * 设置MIUI，状态栏深浅色切换
+     */
+    public static boolean setMIUI(Activity activity, boolean dark) {
+        try {
+            Window window = activity.getWindow();
+            Class<?> clazz = activity.getWindow().getClass();
+            @SuppressLint("PrivateApi")
+            Class<?> layoutParams = Class.forName("android.view.MiuiWindowManager$LayoutParams");
+            Field field = layoutParams.getField("EXTRA_FLAG_STATUS_BAR_DARK_MODE");
+            int darkModeFlag = field.getInt(layoutParams);
+            Method extraFlagField = clazz.getDeclaredMethod("setExtraFlags", int.class, int.class);
+            extraFlagField.setAccessible(true);
+            if (dark) {    //状态栏亮色且黑色字体
+                extraFlagField.invoke(window, darkModeFlag, darkModeFlag);
+            } else {
+                extraFlagField.invoke(window, 0, darkModeFlag);
+            }
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * 获取状态栏高度
+     */
+    public static int getStatusBarHeight(Context context) {
+        int result = 0;
+        int resourceId = context.getResources().getIdentifier("status_bar_height",
+                "dimen", "android");
+        if (resourceId > 0) {
+            result = context.getResources().getDimensionPixelSize(resourceId);
+        }
+        return result;
+    }
 }
